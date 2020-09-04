@@ -71,14 +71,14 @@ class RemoteSystem(object):
         # Return created agent object
         return agent
 
-    def connect_sockets(self, network_protocol,agent_json_dict):
+    def connect_sockets(self, agent_json_dict, network_protocol):
         """Create and connect either TCP sockets or UDP sockets."""
 
         if network_protocol == 'tcp':
             self.agent.connect_tcp_sockets(agent_json_dict)
 
         elif network_protocol == 'udp':
-            self.agent_connect_udp_sockets(agent_json_dict)
+            self.agent.connect_udp_sockets(agent_json_dict)
 
         else:
             exit("Exiting: network_protocol incorrectly specified.")
@@ -918,30 +918,22 @@ class CentralServerAgent(SystemAgent):
                 else:
                     inputs = [group_prev_actions[l]]
 
-                # Agent model stores then provides action,dist
+                # Agent model self-stores then provides action,dist
                 (action, dist) = self.agent_models[l].act(t, inputs)
 
             elif self.agent_models[l]._type == 'neuralnet':
 
-                # Neuralnets conditions on: [server_i, client_i]
+                # Neuralnet conditions on: [server_i, client_i]
                 if t == 0:
                     inputs = []
                 else: 
                     s_i = group_prev_actions[self.group_id][l]
                     c_i = group_prev_actions[l]
 
-                    s_i = convert_int_to_ohv_tensor(s_i)
-                    c_i = convert_int_to_ohv_tensor(c_i)
-
                     inputs = [s_i, c_i]
 
-                # Agent model stores then provides action, dist
-                (logits, action_ohv_tensor) = nextAction_recurrentModel(
-                                            self.agent_models[l], 
-                                            outputMode='sample', 
-                                            t=t, input_list = inputs,
-                                            separateHistory=False)
-                action = convert_ohv_tensor_to_int(action, self.action_space_size)
+                # Agent model stores then provides integer action, dist
+                (logits, action) = self.agent_models[l].act(t,inputs,self.action_space_size)
 
             else:
                 exit("Exiting: Agent model not of supported types.")
@@ -1294,6 +1286,7 @@ class CentralServerAgent(SystemAgent):
 
         Args:
         encrypted_group_keys: list of group key as encrypted by mutual keys.
+                            Keys are of type bytes
                             i.e. [ m_key1(g_key), m_key2(g_key) ]
         """
         send_sock_list = []
@@ -1307,8 +1300,14 @@ class CentralServerAgent(SystemAgent):
             send_sock_list.append(self.sockets_list[l][0])
             # example self.sockets_list[l]: (send_sock, recv_socks)
 
+        # Convert encrypted group keys from bytes to strings
+        encrypted_group_keys_str = []
+        for key in encrypted_group_keys:
+            if type(key) == bytes:
+                encrypted_group_keys_str.append(str(key.decode()))
+
         # Broadcast encrypted group keys 
-        send_over_sockets(send_sock_list, encrypted_group_keys, network_protocol)
+        send_over_sockets(send_sock_list, encrypted_group_keys_str, network_protocol)
 
     def setup_key(self):
         """
@@ -1780,7 +1779,11 @@ class CentralizedSystemAgent(SystemAgent):
         return mutual_key
 
     def receive_group_key(self):
-        """Collect encrypted group key sent by central server."""
+        """
+        Collect encrypted group key sent by central server.
+
+        Return encrypted group key as type bytes.
+        """
 
         # Define variables
         cs_gid = self.central_server_group_id
@@ -1789,9 +1792,14 @@ class CentralizedSystemAgent(SystemAgent):
         recv_sock = self.sockets_list[cs_gid][1]
         # example sockets_list[cs_gid]: (send_sock, recv_sock)
 
-        # Block until socket receives, then collect
+        # Block until socket receives, then collect as string
         group_key_encr = receive_from_socket(recv_sock)
         print("\ngroup_key_encr: ", group_key_encr)
+        print("\ntype(group_key_encr): ", type(group_key_encr))
+
+        # Convert to type bytes, in case decoded by recv socket
+        #if type(group_key_encr) != bytes:
+        #    group_key_encr = group_key_encr.encode()
 
         # Return encrypted group key
         return group_key_encr
