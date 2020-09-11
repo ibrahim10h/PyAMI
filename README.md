@@ -10,6 +10,8 @@ The PyAMI project implements the AMI authentication and key generation protocol 
 The `run.py` and other local files are written in Python 3. 
 
 **Remote/virtual machines:**
+Remote/virtual machines must be provided for each agent in the multi-agent system.
+
 Running `run.py` will transfer and run `install_pylibs.sh` on provided virtual machines.
 This will prepare the virtual machine with the latest version of all required packages/libaries.
 
