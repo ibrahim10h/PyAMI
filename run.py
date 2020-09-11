@@ -6,8 +6,7 @@ from multi_agent_systems import CentralizedSystem, DecentralizedSystem
 from remote_envs_setup import RemoteEnvsSetup
 
 def run():
-    """Create local multi-agent system and run agents in remote envs."""
-    
+    """Create local multi-agent system and run agents in remote envs."""    
     args = arg_parser()
  
     # Set variables for multi-agent system
