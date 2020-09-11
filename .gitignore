@@ -8,15 +8,15 @@ __pycache__/
 .vscode/
 
 # Ignore subdirectories
-c_agent_info_files/
-c_agent_neuralnet_models/
-c_secret_neuralnet_models/
-c_shared_secret_files/
+c_nn_agent_info_files/
+c_nn_agent_neuralnet_models/
+c_nn_secret_neuralnet_models/
+c_nn_shared_secret_files/
 
-d_agent_info_files/
-d_agent_neuralnet_models/
-d_secret_neuralnet_models/
-d_shared_secret_files/
+d_nn_agent_info_files/
+d_nn_agent_neuralnet_models/
+d_nn_secret_neuralnet_models/
+d_nn_shared_secret_files/
 
 # Ignore out files
 file_out_*.txt
