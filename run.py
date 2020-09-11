@@ -1,4 +1,5 @@
 """Run script to set up multi-agent system and run on remote machines."""
+
 from cli import arg_parser
 from file_handling import collect_json_from_dir, collect_neuralnets_from_dir
 from multi_agent_systems import CentralizedSystem, DecentralizedSystem
