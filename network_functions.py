@@ -1,4 +1,5 @@
 """Networking functions."""
+import random
 from random import randint
 import socket, threading, queue, select, time
 
@@ -158,10 +159,14 @@ def connect_socket_pairs(setup_function, socket1_info_tuple, socket2_info_tuple)
 def receive_from_socket(recv_sock):
 	"""
 	Perform blocking call in script until msg arrives at receive socket.
-	Message convention format (with delimiter): 'msg_C'.
+	Message convention format (with delimiter): 'msg_COMPLT'.
 
 	Return: message of type string (delimiter removed).
 	"""
+
+	# Define variables
+	end_delim = '_COMPLT'
+	end_delim_size = len(end_delim)
 
 	# Wait until receive socket contains at least one message
 	while(1):
@@ -172,22 +177,24 @@ def receive_from_socket(recv_sock):
 		if socket_ready[0]:
 			peek_data = recv_sock.recv(1024,socket.MSG_PEEK).decode()
 
-			if 'C' in peek_data:
+			# i.e. if '_COMPLT' found in peek data which is string
+			if end_delim in peek_data: 
+				#print("\nend delimiter: ", end_delim, " found in peek_data: ", peek_data)
 				break
 
 	# Compute size of first message
-	first_msg_end_index = peek_data.find('C')
-	first_msg = peek_data[:first_msg_end_index+1] # i.e. 'msg_C'
+	first_msg_end_index = peek_data.find(end_delim) # i.e. find '_COMPLT'
+	first_msg = peek_data[:first_msg_end_index+end_delim_size] # i.e. 'msg_COMPLT'
 	first_msg_size = len(first_msg.encode('utf-8'))
-	print("first_msg: ", first_msg)
+	#print("\nfirst_msg: ", first_msg)
 
 	# Remove only first available msg from socket buffer
 	received_msg = recv_sock.recv(first_msg_size).decode()
-	print("received_msg: ", received_msg)
+	#print("\nreceived_msg: ", received_msg, " type: ", type(received_msg))
 
 	# Remove delimiter from message
-	msg = received_msg.replace('_C', '')
-	print("msg: ", msg)
+	msg = received_msg.replace(end_delim, '') # i.e. remove '_COMPLT'
+	#print("\nmsg without delimiter: ", msg)
 	
 	# Return message
 	return msg
@@ -201,7 +208,7 @@ def receive_action_from_socket(recv_sock):
 	Return: list of time-ordered tuples: [(3,0), (2,1)]
 			list of unordered time-formatted msgs ['3F_t0_C', '2F_t1_C']
 	"""
-	print("\nInside receive_from_socket()!")
+	#print("\nInside receive_from_socket()!")
 
 	# Wait until receive socket contains at least one message
 	while(1):
@@ -221,11 +228,11 @@ def receive_action_from_socket(recv_sock):
 	first_msg_end_index = peek_data.find('C')
 	first_msg = peek_data[:first_msg_end_index+1] # i.e. '3F_t0_C'
 	first_msg_size = len(first_msg.encode('utf-8'))
-	print("first_msg: ", first_msg)
+	#print("first_msg: ", first_msg)
 
 	# Remove only first available msg from socket buffer
 	received_msg = recv_sock.recv(first_msg_size).decode()
-	print("received_msg: ", received_msg)
+	#print("received_msg: ", received_msg)
 	
 	# Wrap single msg in list
 	msg_list = [received_msg]
@@ -238,8 +245,8 @@ def receive_action_from_socket(recv_sock):
 	# Order received messages by timestep, the second value
 	msg_list_tuples.sort(key=lambda x:x[1])
 
-	print("\nmsg_list: ", msg_list)
-	print("time-ordered msg_list_tuples: ", msg_list_tuples)
+	#print("\nmsg_list: ", msg_list)
+	#print("time-ordered msg_list_tuples: ", msg_list_tuples)
 
 	return (msg_list, msg_list_tuples)
 
@@ -250,7 +257,7 @@ def strip_msg(msg):
 	Args:
 	msg: convention is i.e. '3F_t7_C' (action=3, timestep=7)
 	"""
-	print("\nInside strip_msg with: ", msg)
+	#print("\nInside strip_msg with: ", msg)
 
 	# Collect timestep
 	time_begin_index = msg.index('t') + 1
@@ -262,26 +269,28 @@ def strip_msg(msg):
 	action_end_index = msg.index('F')
 	msg_action = int(msg[:action_end_index])
 
-	print("\nmsg_action: %d, msg_timestep: %d" % (msg_action,msg_timestep))
+	#print("\nmsg_action: %d, msg_timestep: %d" % (msg_action,msg_timestep))
 	return (msg_action, msg_timestep)
 
 def send_over_sockets(send_sock_list, msg_list, network_protocol):
 	"""
 	(Multi-threaded) Simultaneously send multiple messages by given sockets.
-	Messages are formatted simply with '_C' delimiter: 'msg_C'.
+	Messages are formatted simply with '_COMPLT' delimiter: 'msg_COMPLT'.
 
 	Args:
 	send_sock_list: list of sockets by which msgs should be sent.
 	msg_list: list of strings, i.e. ['msg1', 'msg2', 'msg3']
 	"""
 
+	# Define variables
 	threads_list = []
+	end_delim = '_COMPLT'
 
 	# Build list of threads for all msgs
 	for (send_sock, msg) in zip(send_sock_list, msg_list):
 
-		# Format message with action and time, i.e. 'msg_C'
-		msg_formatted = str(msg) + '_C'
+		# Format message with action and time, i.e. 'msg_COMPLT'
+		msg_formatted = str(msg) + end_delim
 		
 		# Build thread
 		send_thread = threading.Thread(target = send_over_sock, 
@@ -340,10 +349,13 @@ def send_over_sock(send_sock, msg, network_protocol):
 	Args:
 	msg: formatted msg string, i.e. '3F_t0_C'
 	"""
-
+	
+	#print("\nInside send_over_sock")
+	#print("with msg.encode():", msg.encode(), "of type: ", type(msg.encode()))
+	
 	# Send result should be None if successful
 	send_result = send_sock.sendall(msg.encode()) # encode as bytes
-	print("\nSend result is None if successful: ", send_result)
+	#print("\nSend result is None if successful: ", send_result)
 
 	# Protect receive socket from being overloaded in case we send repeatedly
-	time.sleep(0.25)
+	#time.sleep(0.25)

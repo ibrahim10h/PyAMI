@@ -36,7 +36,7 @@ def pbkd(password, salt):
 
 	# Produce key from one-time function
 	cipher_key = base64.urlsafe_b64encode(kdf.derive(password)) 
-	print("\ncipher_key: ", cipher_key) 
+	#print("\ncipher_key: ", cipher_key) 
 
 	# Return key for building ciphersuite
 	return cipher_key
@@ -60,7 +60,7 @@ def encrypt(cipher_key, plaintext):
 
 	# Encrypt plaintext with ciphersuite
 	ciphertext = ciphersuite.encrypt(plaintext_encoded)
-	print("\nciphertext: ", ciphertext)
+	#print("\nciphertext: ", ciphertext)
 
 	# Return cipher text
 	return ciphertext
@@ -75,6 +75,8 @@ def decrypt(cipher_key, ciphertext):
 	ciphertext: of type bytes.
 	"""
 
+	#print("\nInside decrypt with cipher_key: ", cipher_key, " ciphertext: ", ciphertext)
+
 	# Build ciphersuite from key
 	ciphersuite = Fernet(cipher_key)
 
@@ -83,7 +85,7 @@ def decrypt(cipher_key, ciphertext):
 
 	# Convert plaintext from type bytes to type string
 	plaintext_decoded = plaintext.decode()
-	print("\nplaintext_decoded: ", plaintext_decoded)
+	#print("\nplaintext_decoded: ", plaintext_decoded)
 
 	# Return string plaintext
 	return plaintext_decoded

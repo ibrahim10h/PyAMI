@@ -252,7 +252,7 @@ class RemoteEnvsSetup(object):
             ssh_subproc_list.append(ssh_subproc)
 
             # Buffer each subproc by 1 second to allow for setup
-            time.sleep(1)
+            time.sleep(2)
 
         # Print poll codes right when subprocs released
         print("\nPoll code 0: complete with no error.")

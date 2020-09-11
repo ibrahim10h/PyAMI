@@ -80,11 +80,15 @@ def collect_neuralnets_from_dir(dir_path, subdirs, group_size):
                 - agent2.pth
 
             agent1_neuralnet_models/
-                - agent0.pth
+                - agent1.pth
 
             agent2_neuralnet_models/
-                - agent0.pth
+                - agent2.pth
     """
+    print("\nInside collect_neuralnets_from_dir with:")
+    print("dir_path: ", dir_path)
+    print("subdirs: ", subdirs)
+
     assert os.path.isdir(dir_path), "Directory does not exist!"
 
     # Define variables
@@ -92,6 +96,7 @@ def collect_neuralnets_from_dir(dir_path, subdirs, group_size):
 
     # Go through subdirectories for each agent
     for l in range(group_size):
+        print("\nl: ", l)
 
         # Define variables
         agent_statedict_list = [-1 for _ in range(group_size)]
@@ -105,7 +110,7 @@ def collect_neuralnets_from_dir(dir_path, subdirs, group_size):
         # Get sorted filenames from directory
         file_names_list = os.listdir(subdir_path)
         file_names_list.sort()
-        #print("file_names_list: ", file_names_list)
+        print("file_names_list: ", file_names_list)
 
         # If agent neural net found, load state dict and place in list at group id
         for k in range(group_size):
@@ -115,12 +120,12 @@ def collect_neuralnets_from_dir(dir_path, subdirs, group_size):
             if model_name in file_names_list:
                 agent_statedict_list[k] = torch.load(subdir_path + '/' + model_name)
 
-        #print("agent_statedict_list: ", agent_statedict_list)
+        print("agent_statedict_list: ", agent_statedict_list)
 
         # Update list for all agent
         neuralnet_statedict_list[l] = agent_statedict_list
 
-    #print("neuralnet_statedict_list: ", neuralnet_statedict_list)
+    print("neuralnet_statedict_list: ", neuralnet_statedict_list)
 
     return (neuralnet_statedict_list, file_names_list)
 

@@ -13,6 +13,8 @@ from key_gen import session_key_v1, pbkd, encrypt, decrypt
 from itertools import combinations 
 import numpy as np
 import random, torch
+import time
+from datetime import datetime
 
 class RemoteSystem(object):
     """Single-agent system which lives on remote machine."""
@@ -93,15 +95,19 @@ class RemoteSystem(object):
         group_interaction_history = [] # contains sublist for each timestep
         current_time = 0
 
+        # Start time
+        start_time = time.time()
+        start_datetime = datetime.now()
+
         # Build interaction history by sending and receiving actions
-        print("\nself.max_interaction_length: ", self.max_interaction_length)
+        #print("\nself.max_interaction_length: ", self.max_interaction_length)
         while(current_time < self.max_interaction_length):
-            print("\ncurrent_time: ", current_time)
+            #print("\ncurrent_time: ", current_time)
 
             # DEBUG: write current time to file
-            write_str = 'current_time_'+str(current_time)
-            f = open(write_str, 'w')
-            f.close()
+            #write_str = 'current_time_'+str(current_time)
+            #f = open(write_str, 'w')
+            #f.close()
 
             # Get sublist of group actions from previous timestep
             if current_time == 0:
@@ -109,12 +115,12 @@ class RemoteSystem(object):
             else:
                 prev_decisions = group_interaction_history[-1][:] # shallow copy
 
-            print("\nprev_decisions provided: ", prev_decisions)
-            print("group_interaction_history after providing: ", group_interaction_history)
+            #print("\nprev_decisions provided: ", prev_decisions)
+            #print("group_interaction_history after providing: ", group_interaction_history)
 
             # Get next action(s), update secret(s), transmits action(s), receive action(s)
             group_current_decisions = self.agent.interact(current_time, prev_decisions, network_protocol)
-            print("\nGot from interact() the group_current_decisions: ", group_current_decisions)
+            #print("\nGot from interact() the group_current_decisions: ", group_current_decisions)
             
             """
             current_decisions is different for each type of system agent.
@@ -131,22 +137,30 @@ class RemoteSystem(object):
 
             # Update group history
             group_interaction_history.append(group_current_decisions)
-            print("\nUpdated group_interaction_history: ", group_interaction_history)
+            #print("\nUpdated group_interaction_history: ", group_interaction_history)
 
             # Update timestep
             current_time += 1
+
+        # End timer
+        end_time = time.time()
+        end_datetime = datetime.now()
 
         # Update system agent with group interaction history
         self.agent.set_group_interaction_history(group_interaction_history)
 
         # Print interaction results
-        print("\ngroup_interaction_history: ", group_interaction_history)
+        #print("\ngroup_interaction_history: ", group_interaction_history)
         
         # Print behavioral model interaction histories
-        print("\nAgent model history: ", self.print_info('model_history'))
+        #print("\nAgent model history: ", self.print_info('model_history'))
 
         # Print shared secrets interaction histories
-        print("\nAgent shared secret histories: ", self.print_info('secrets_histories'))
+        #print("\nAgent shared secret histories: ", self.print_info('secrets_histories'))
+
+        # Return remote interaction time
+        elapsed_time = end_time - start_time
+        return (elapsed_time, start_datetime, end_datetime)
 
     def authenticate_remote_agents(self, agent_file):
         """Have agent authenticate other remote agent(s) and store result."""
@@ -208,7 +222,7 @@ class MultiAgentSystem(object):
         # Set variables
         self.group_size = group_size
         self.agents_list = -1
-        self.max_interaction_length = 5 # length of agent-to-agent interaction histories
+        self.max_interaction_length = 50 # length of agent-to-agent interaction histories
 
     def create_system_agents(self, group_size, agent_files, secrets_files):
         """Instantiate agents in the system."""
@@ -857,7 +871,7 @@ class CentralServerAgent(SystemAgent):
         # example own_actions_list: [-1, action_for_a1, action_for_a2]
 
         # 2. Update shared secrets which store their own dists
-        self.secrets_next_action(t, prev_actions)
+        #self.secrets_next_action(t, prev_actions)
 
         # 3. Transmit own actions to other agents
         self.broadcast_actions(own_actions_list, t, network_protocol)
@@ -974,8 +988,8 @@ class CentralServerAgent(SystemAgent):
             elif self.shared_secrets_list[l]._type == 'neuralnet':
 
                 """
-                Neuralnet conditions on: [server_i, client_i], not on own actions.
-                The shared secret model just needs to output expected dists for
+                Secret neuralnet conditions on: [server_i, client_i], not on own actions.
+                The shared secret model just needs to self-store expected dists for
                 ...later key computation. Its action output is not required.
                 """
                 if t == 0:
@@ -984,17 +998,11 @@ class CentralServerAgent(SystemAgent):
                     s_i = group_prev_actions[self.group_id][l][:]
                     c_i = group_prev_actions[l][:]
 
-                    s_i = convert_int_to_ohv_tensor(s_i)
-                    c_i = convert_int_to_ohv_tensor(c_i)
-
                     inputs = [s_i, c_i]
 
                 # Secret model stores own action, dist
-                (_, _) = nextAction_recurrentModel(
-                                            self.shared_secrets_list[l], 
-                                            outputMode='sample', 
-                                            t=t, input_list = inputs,
-                                            separateHistory=False)
+                (_, _) = self.shared_secrets_list[l].act(t,inputs,self.action_space_size)
+
             else:
                 exit("Exiting: Agent model not of supported types.")
 
@@ -1034,10 +1042,10 @@ class CentralServerAgent(SystemAgent):
         Collect received actions from other agents during remote interaction.
         Update self.received_actions_list with all received actions.
         """
-        print("\nInside check_receive_sockets!")
+        #print("\nInside check_receive_sockets!")
 
         for l in range(self.group_size):
-            print("\nl: ", l)
+            #print("\nl: ", l)
 
             if l == self.group_id:
                 continue
@@ -1275,7 +1283,7 @@ class CentralServerAgent(SystemAgent):
             encrypted_group_keys.append(group_key_encr)
 
         # Return list
-        print("\nencrypted_group_keys: ", encrypted_group_keys)
+        #print("\nencrypted_group_keys: ", encrypted_group_keys)
         return encrypted_group_keys
         
 
@@ -1528,7 +1536,7 @@ class CentralizedSystemAgent(SystemAgent):
         own_action = self.model_next_action(t, prev_actions)
 
         # 2. Update shared secret which also stores the dist
-        self.secrets_next_action(t, prev_actions)
+        #self.secrets_next_action(t, prev_actions)
 
         # 3. Transmit action to central server
         action_broadcast_list = [-1 for _ in range(self.group_size)]
@@ -1584,12 +1592,8 @@ class CentralizedSystemAgent(SystemAgent):
             else: 
                 inputs = [group_prev_actions[cs_gid][:], group_prev_actions[self.group_id][:]]
 
-            # Agent model stores then provides action, dist
-            (logits, action_ohv_tensor) = nextAction_recurrentModel(
-                                        self.agent_model, outputMode='sample', 
-                                        t=t, input_list = inputs,
-                                        separateHistory=False)
-            action = convert_ohv_tensor_to_int(action, self.action_space_size)
+            # Agent model stores then provides integer action, dist
+            (logits, action) = self.agent_model.act(t,inputs,self.action_space_size)
 
         else:
             exit("Exiting: Agent model not of supported types.")
@@ -1621,11 +1625,11 @@ class CentralizedSystemAgent(SystemAgent):
             # Secret model stores own dist,action
             (_, _) = self.shared_secrets_list[cs_gid].act(t, inputs)
 
-        elif self.shared_secrets_list[cs_gid] == 'neuralnet':
+        elif self.shared_secrets_list[cs_gid]._type == 'neuralnet':
 
             """
             Neuralnet conditions on: [server_i, client_i], not on own actions.
-            The shared secret model just needs to output expected dists for
+            The shared secret model just needs to self-store expected dists for
             ...later key computation. Its action output is not required.
             """
             if t == 0:
@@ -1634,11 +1638,8 @@ class CentralizedSystemAgent(SystemAgent):
                 inputs = [group_prev_actions[cs_gid], group_prev_actions[self.group_id]]
 
             # Secret model stores own action, dist
-            (_, _) = nextAction_recurrentModel(
-                                        self.shared_secrets_list[cs_gid], 
-                                        outputMode='sample', 
-                                        t=t, input_list = inputs,
-                                        separateHistory=False)
+            (_, _) = self.shared_secrets_list[cs_gid].act(t,inputs,self.action_space_size)
+
         else:
             exit("Exiting: Agent model not of supported types.")
 
@@ -1667,7 +1668,7 @@ class CentralizedSystemAgent(SystemAgent):
         Collect received actions from other agents during remote interaction.
         Update self.received_actions_list with all received actions.
         """
-        print("\nInside check_receive_sockets!")
+        #print("\nInside check_receive_sockets!")
 
         # Define variables
         cs_gid = self.central_server_group_id
@@ -1782,7 +1783,7 @@ class CentralizedSystemAgent(SystemAgent):
         """
         Collect encrypted group key sent by central server.
 
-        Return encrypted group key as type bytes.
+        Return encrypted (by mutual key) group key as type str.
         """
 
         # Define variables
@@ -1794,12 +1795,7 @@ class CentralizedSystemAgent(SystemAgent):
 
         # Block until socket receives, then collect as string
         group_key_encr = receive_from_socket(recv_sock)
-        print("\ngroup_key_encr: ", group_key_encr)
-        print("\ntype(group_key_encr): ", type(group_key_encr))
-
-        # Convert to type bytes, in case decoded by recv socket
-        #if type(group_key_encr) != bytes:
-        #    group_key_encr = group_key_encr.encode()
+        #print("\ngroup_key_encr: ", group_key_encr)
 
         # Return encrypted group key
         return group_key_encr
@@ -1809,15 +1805,20 @@ class CentralizedSystemAgent(SystemAgent):
         Decrypt group key using mutual key.
 
         Args: 
-        group_key_encr: encrypted group key of type bytes.
+        group_key_encr: group key of type str
+                        Note: group key was encrypted by mutual key
         """
+
+        # Convert to type bytes as required by Fernet suite
+        if type(group_key_encr) != bytes:
+            group_key_encr = group_key_encr.encode()
 
          # Derive cipher key from mutual key (salt is group id)
         cipher_key = pbkd(password=str(self.mutual_key), salt=self.group_id)
 
         # Build ciphersuite from cipher key and decrypt group key
         group_key_decr = decrypt(cipher_key, ciphertext=group_key_encr)
-        print("\ngroup_key_decr: ", group_key_decr)
+        print("\ngroup_key_decr: ", group_key_decr, " of type: ", type(group_key_decr))
 
         # Return decrypted group key
         return group_key_decr
@@ -1832,11 +1833,11 @@ class CentralizedSystemAgent(SystemAgent):
         # If other agents, receive and decrypt group key from server
         if self.group_size > 2:
             
-            # Block until group key received
-            group_key_encr = self.receive_group_key()
+            # Block until group key received 
+            group_key_encr = self.receive_group_key() # type str
 
             # Decrypt group key with mutual key
-            group_key = self.decrypt_group_key(group_key_encr)
+            group_key = self.decrypt_group_key(group_key_encr) # type str
 
             # Set group key
             self.set_group_key(group_key)
@@ -2032,14 +2033,14 @@ class DecentralizedSystemAgent(SystemAgent):
         prev_actions: sublist with group actions from previous timestep 
                     i.e. [a0_action, a1_action, a2_action]
         """
-        print("\nInside interact() with prev_actions: ", prev_actions)
+        #print("\nInside interact() with prev_actions: ", prev_actions)
 
         # 1. Get next action, which model stores itself
         own_action = self.model_next_action(t, prev_actions)
-        print("\nown_action: ", own_action)
+        #print("\nown_action: ", own_action)
 
         # 2. Update shared secrets, which will store their dists
-        self.secrets_next_action(t, prev_actions)
+        #self.secrets_next_action(t, prev_actions)
 
         # 3. Broadcast the same action to all other agents in group
         action_broadcast_list = [own_action for _ in range(self.group_size)]
@@ -2057,8 +2058,8 @@ class DecentralizedSystemAgent(SystemAgent):
         # example of self.received_actions_list: [-1, [-1,..,-1], [-1,..,-1]]
 
         # collect received actions from self
-        print("\nBuilding group_actions_list")
 
+        #print("\nBuilding group_actions_list")
         group_actions_list = [-1 for _ in range(self.group_size)]
         group_actions_list[self.group_id] = own_action
 
@@ -2076,7 +2077,7 @@ class DecentralizedSystemAgent(SystemAgent):
 
         [ a0_action, a1_action, a2_action]
         """
-        print("\ngroup_actions_list: ", group_actions_list)
+        #print("\ngroup_actions_list: ", group_actions_list)
 
         # return group interaction history for this timestep
         return group_actions_list
@@ -2090,8 +2091,8 @@ class DecentralizedSystemAgent(SystemAgent):
         group_prev_actions: group actions from previous timestep 
                             i.e. [a0_action, a1_action, a2_action]
         """
-        print("\nInside model_next_action with:")
-        print("t: ", t, " and group_prev_actions: ", group_prev_actions)
+        #print("\nInside model_next_action with:")
+        #print("t: ", t, " and group_prev_actions: ", group_prev_actions)
 
         if self.agent_model._type == 'multitree':
             inputs = -1 # initialize
@@ -2107,25 +2108,21 @@ class DecentralizedSystemAgent(SystemAgent):
                 # Example if a0: [a1_action, a2_action]
 
             # Multitree act() will convert inputs to branching code
-            print("\nCall agent_model.act() with inputs: ", inputs)
+            #print("\nCall agent_model.act() with inputs: ", inputs)
             (action, dist) = self.agent_model.act(t, inputs)
 
         elif self.agent_model._type == 'neuralnet':
 
-            exit("\nExiting: Decentralized system neuralnet not yet implemented.")
-
-            """Method for a decentralized system neural net:
-            
             if t == 0: 
                 inputs = []
             else:
                 # Condition on entire interaction history from t-1
-                inputs = group_prev_actions
+                inputs = group_prev_actions[:]
+                # example if am a0: [a0_action, a1_action, a2_action]
 
-                # Example if a0: [a0_action, a1_action, a2_action]
-            
-            # Get (logits, action) from group-based neuralnet class method.
-            """
+            # Agent model stores then provides integer action, dist
+            (logits, action) = self.agent_model.act(t,inputs,self.action_space_size)
+    
         else:
             exit("Exiting: Agent model not of supported types.")
 
@@ -2142,7 +2139,7 @@ class DecentralizedSystemAgent(SystemAgent):
         group_prev_actions: group actions from previous timestep 
                             i.e. [a0_action, a1_action, a2_action]
         """
-        print("\nInside secrets_next_action() with t: ", t, " and group_prev_actions: ", group_prev_actions)
+        #print("\nInside secrets_next_action() with t: ", t, " and group_prev_actions: ", group_prev_actions)
 
         for l in range(self.group_size):
 
@@ -2157,30 +2154,26 @@ class DecentralizedSystemAgent(SystemAgent):
                     # Secret model conditions on public actions of other agents
                     group_prev_actions_copy = list(group_prev_actions[:]) # shallow copy
                     group_prev_actions_copy.pop(l)
-                    print("group_prev_actions_copy with pop: ", group_prev_actions_copy)
-                    print("original group_prev_actions: ", group_prev_actions)
+                    #print("group_prev_actions_copy with pop: ", group_prev_actions_copy)
+                    #print("original group_prev_actions: ", group_prev_actions)
                     inputs = group_prev_actions_copy[:]
-
-                    # Example: secret for a1 takes in [a0_action, a2_action]
-
-                print("\nCalling .act() with inputs: ", inputs)
+                    # example: secret for a1 takes in [a0_action, a2_action]
 
                 (_,_) = self.shared_secrets_list[l].act(t, inputs)
 
             elif self.shared_secrets_list[l]._type == 'neuralnet':
-
-                exit("Exiting: Decentralized system neural net class not implemented.")
-
-                """Method for decentralized system neural net next action:
-
+                
                 if t == 0:
                     inputs = []
                 else:
                     # Condition on entire interaction history at time: t-1
-                    inputs = group_prev_actions
+                    inputs = group_prev_actions[:]
 
-                (_,_) = nextAction()
-                """
+                # Secret model will self-store action and dist
+                (_,_) = self.shared_secrets_list[l].act(t,inputs,self.action_space_size)
+
+            else:
+                exit("Exiting: shared secrets list type incorrectly specified.")
 
     def broadcast_actions(self, actions_for_group, t, network_protocol):
         """
@@ -2217,7 +2210,7 @@ class DecentralizedSystemAgent(SystemAgent):
         Collect received actions from other agents during remote interaction.
         Update self.received_actions_list with received action.
         """
-        print("\nInside check_receive_sockets!")
+        #print("\nInside check_receive_sockets!")
 
         for l in range(self.group_size):
 

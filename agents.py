@@ -560,7 +560,7 @@ class PDTMultiAgent(Agent):
 		
 		# Convert traversal_actions to tuple
 		perm_tuple = tuple(traversal_actions[:]) # i.e. (3,2)
-		print("perm_tuple: ", perm_tuple)
+		#print("perm_tuple: ", perm_tuple)
 
 		# Map to a permutation in multi-tree's branch codes
 		branch_index = self._ordered_branch_codes.index(perm_tuple)
@@ -579,7 +579,7 @@ class PDTMultiAgent(Agent):
 		self._state.clear()
 
 	def act(self, t, traversal_actions=[]):
-		print("\nInside act() with t: ", t, " and traversal_actions: ", traversal_actions)
+		#print("\nInside act() with t: ", t, " and traversal_actions: ", traversal_actions)
 		"""
 		Convert provided actions to branch code input.
 		Select action given time and  branch code input.

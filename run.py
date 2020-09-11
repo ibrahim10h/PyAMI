@@ -37,20 +37,30 @@ def run():
     (shared_secret_statedicts, _) = collect_neuralnets_from_dir(args.path_secret_neuralnets,
                                                             agent_secret_subdirs, 
                                                             group_size)
-
     # Print all retrieved objects
     for agent in agents_json:
-        print("\nagent: ", agent.values())
+        print("\nagent info: ", agent.values())
 
     for secret in shared_secrets_json:
-        print("\nsecret: ", secret.values())
+        print("\nsecret info: ", secret.values())
 
-    for statedict in agent_model_statedicts:
-        print("\nagent model: ", statedict)
+    print("\nPrinting retrieved models:")
+    for l in range(len(agent_model_statedicts)):
+        print("\nl: ", l)
+        for m in agent_model_statedicts[l]:
+            if m == -1:
+                print("model: ", m)
+            else:
+                print("model: ", m['model.0.weight'][0])
 
-    for statedict in shared_secret_statedicts:
-        print("\nsecret model: ", statedict)
-
+    print("\nPrinting retrieved secrets:")
+    for l in range(len(shared_secret_statedicts)):
+        print("\nl: ", l)
+        for s in shared_secret_statedicts[l]:
+            if s == -1:
+                print("secret: ", s)
+            else:
+                print("secret: ", s['model.0.weight'][0])
 
     # Create multi-agent system, along with agents
     if system_type == 'centralized':
@@ -63,6 +73,7 @@ def run():
     # Print all agent's behavioural models and shared secrets
     system.print_info('agent_model')
     system.print_info('agent_secrets')
+
 
     # Set up socket information (ip address/port number) for the system
     system.setup_socket_info(path_agent_files)
