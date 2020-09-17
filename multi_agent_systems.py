@@ -170,7 +170,7 @@ class RemoteSystem(object):
                                 self.max_interaction_length, 
                                 agent_file)
         # Print results
-        print("\nAgent auth results: ", self.agent.auth_results)
+        #print("\nAgent auth results: ", self.agent.auth_results)
 
     def setup_session_key(self):
         """Have agent create and set session key(s)."""
@@ -222,7 +222,7 @@ class MultiAgentSystem(object):
         # Set variables
         self.group_size = group_size
         self.agents_list = -1
-        self.max_interaction_length = 50 # length of agent-to-agent interaction histories
+        self.max_interaction_length = 200 # length of agent-to-agent interaction histories
 
     def create_system_agents(self, group_size, agent_files, secrets_files):
         """Instantiate agents in the system."""
