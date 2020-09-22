@@ -6,16 +6,25 @@ This repository is the official implementation of PyAMI for the paper:
 The PyAMI project implements the AMI authentication and key generation protocol in a multi-agent system consisting of multiple virtual machines. 
 
 # Requirements
-**Local machine:**
-The `run.py` and other local files are written in Python 3. 
+### Local Requirements
 
-**Remote/virtual machines:**
-Remote/virtual machines must be provided for each agent in the multi-agent system.
+* [Python 3](https://www.python.org/downloads/) 
 
-Running `run.py` will transfer and run `install_pylibs.sh` on provided virtual machines.
-This will prepare the virtual machine with the latest version of all required packages/libaries.
+### Remote Requirements
+If multi-agent system specified to run on remote machines, `run.py` will use [pip](https://pypi.org/project/pip/) to install the latest version of the following packages on provided machines:
+* [Scipy](https://www.scipy.org/install.html)
+* [PyTorch](https://pytorch.org/get-started/locally/)
 
-# Directory structure (centralized setting)
+# Start-up Guide
+The following sections describe how to get up and running with the supported multi-agent system deployments:
+
+1. Local directory structure.
+2. JSON file format for agents' info.
+3. Run commands for supported deployments.
+
+### 1. Local directory structure 
+The `run.py` requires a specific directory/subdirectory structure on the local machine for agent information:
+
     c_pdt_agent_info_files/
         agent0_info.txt
         agent1_info.txt
@@ -54,7 +63,7 @@ The same is true for `c_pdt_secret_neuralnet_models/`.
 {
     "group_id": 0
     "unique_seed": 0
-    "reuse\_agent\_model": True
+    "reuse_agent_model": True
     "models_list": [ -1,
                     {"group_id: 0", "unique_seed": 0, ....},
                     {"group_id: 0", "unique_seed": 0, ....}
