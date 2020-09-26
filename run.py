@@ -75,42 +75,60 @@ def run():
     system.print_info('agent_secrets')
 
 
-    # Set up socket information (ip address/port number) for the system
-    system.setup_socket_info(path_agent_files)
-    system.print_info('agent_sockets')
+    if args.run_remotely == 'yes':
+
+        # Set up socket information (ip address/port number) for the system
+        system.setup_socket_info(path_agent_files)
+        system.print_info('agent_sockets')
 
 
-    # Prepare remote machines to run agents 
-    remote_envs_setup = RemoteEnvsSetup(system, 
-                            args.path_agent_files, args.path_shared_secrets,
-                            args.path_neuralnet_models, args.path_secret_neuralnets)
+        # Prepare remote machines to run agents 
+        remote_envs_setup = RemoteEnvsSetup(system, 
+                                args.path_agent_files, args.path_shared_secrets,
+                                args.path_neuralnet_models, args.path_secret_neuralnets)
 
-    # Create system settings file for remote system
-    remote_envs_setup.create_settings_file(filename = 'system_settings.txt')
+        # Create system settings file for remote system
+        remote_envs_setup.create_settings_file(filename = 'system_settings.txt')
 
-    # Clear remote machines of existing dir structure
-    remote_envs_setup.remove_remote_directories()
+        # Clear remote machines of existing dir structure
+        remote_envs_setup.remove_remote_directories()
 
-    # Build list of directories for remote dir structure
-    remote_envs_setup.build_remote_directories(args.path_agent_files, args.path_shared_secrets,
-                                        args.path_neuralnet_models, args.path_secret_neuralnets)
+        # Build list of directories for remote dir structure
+        remote_envs_setup.build_remote_directories(args.path_agent_files, args.path_shared_secrets,
+                                            args.path_neuralnet_models, args.path_secret_neuralnets)
 
-    # Send required root dir scripts, agent info files, and any neural net models
-    root_dir_scripts = ['install_pylibs.sh', 'system_settings.txt', 'device_settings.py',
-                        'agents.py', 'multi_agent_systems.py', 
-                        'network_functions.py', 'file_handling.py', 
-                        'run_virtual_agent.py', 'hyp_test.py',
-                        'key_gen.py']
+        # Send required root dir scripts, agent info files, and any neural net models
+        root_dir_scripts = ['install_pylibs.sh', 'system_settings.txt', 'device_settings.py',
+                            'agents.py', 'multi_agent_systems.py', 
+                            'network_functions.py', 'file_handling.py', 
+                            'run_virtual_agent.py', 'hyp_test.py',
+                            'key_gen.py']
 
-    remote_envs_setup.send_required_files(root_dir_scripts, 
-                                        args.path_agent_files, args.path_shared_secrets,
-                                        args.path_neuralnet_models, args.path_secret_neuralnets)
+        remote_envs_setup.send_required_files(root_dir_scripts, 
+                                            args.path_agent_files, args.path_shared_secrets,
+                                            args.path_neuralnet_models, args.path_secret_neuralnets)
 
-    # Install required python libaries on remote machines
-    remote_envs_setup.install_required_pylibs('install_pylibs.sh')
+        # Install required python libaries on remote machines
+        remote_envs_setup.install_required_pylibs('install_pylibs.sh')
 
-    # Run agents on remote machines with run script
-    remote_envs_setup.run_agents_remotely('run_virtual_agent.py')
+        # Run agents on remote machines with run script
+        remote_envs_setup.run_agents_remotely('run_virtual_agent.py')
+
+    else:
+        # Create multi-agent system entirely on local machine
+        if args.system_type == 'centralized':
+            local_system = CentralizedLocalSystem(system)
+        else:
+            local_system = DecentralizedLocalSystem(system)
+
+        # Have agents in local system perform interaction process
+        local_system.local_interaction()
+
+        # Have agents in local system perform authentication
+        local_system.authenticate()
+
+        # Have agents in local system compute keys
+        local_system.setup_session_keys()
 
 
 if __name__ == "__main__":

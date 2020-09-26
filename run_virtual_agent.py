@@ -78,8 +78,6 @@ def run_agent():
         start_datetime_list.append(datetime.strftime(start_datetime,'%Y-%m-%d %H:%M:%S:%f'))
         end_datetime_list.append(datetime.strftime(end_datetime,'%Y-%m-%d %H:%M:%S:%f'))
 
-    #avg_elapsed_time = statistics.mean(elapsed_time_list)
-    #print("\nAvg elapsed time over %d remote interactions: %0.4f" %(num_interactions,avg_elapsed_time))
 
     #sprint("\nelapsed_time_list: ", elapsed_time_list)
     print("\nstart_datetime_list: ", start_datetime_list)
