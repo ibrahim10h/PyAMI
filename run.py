@@ -3,6 +3,7 @@
 from cli import arg_parser
 from file_handling import collect_json_from_dir, collect_neuralnets_from_dir
 from multi_agent_systems import CentralizedSystem, DecentralizedSystem
+from multi_agent_systems import CentralizedLocalSystem, DecentralizedLocalSystem
 from remote_envs_setup import RemoteEnvsSetup
 
 def run():
@@ -125,10 +126,31 @@ def run():
         local_system.local_interaction()
 
         # Have agents in local system perform authentication
-        local_system.authenticate()
+        local_system.authenticate_local_agents()
+
+        print("\nAuthentication results for all agents:")
+        for l in range(group_size):
+            print("\nagent ", l, ": ", local_system.system.agents_list[l].auth_results)
 
         # Have agents in local system compute keys
-        local_system.setup_session_keys()
+        local_system.setup_session_key()
+
+        print("\nKey agreement results for all agents: ")
+        
+        if group_size > 2:
+            for l in range(group_size):
+                print("\nagent ", l, ": ", local_system.system.agents_list[l].group_key)
+        
+        else:
+            cs_gid = local_system.central_server_group_id
+
+            for l in range(group_size):
+                if l == cs_gid:
+                    print("\nCentral server mutual keys: ")
+                    print(local_system.agents_list[cs_gid].mutual_keys_list)
+                else:
+                    print("\nAgent mutual key:")
+                    print(local_system.agents_list[l].mutual_key)
 
 
 if __name__ == "__main__":

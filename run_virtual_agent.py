@@ -84,7 +84,7 @@ def run_agent():
     print("\nend_datetime_list: ", end_datetime_list)
 
 
-    return # REMOVE AFTER TIME TESTING
+    #return # REMOVE AFTER TIME TESTING
 
     # Have agent generate session key(s)
     remote_system.setup_session_key()

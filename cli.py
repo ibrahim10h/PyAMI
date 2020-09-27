@@ -8,6 +8,7 @@ def arg_parser():
 
     parser.add_argument('--system_type', type=str, default='centralized',
                         help="Specify either centralized/decentrized system.")
+    
     parser.add_argument('--run_remotely', type=str, default='yes',
                         help="Specify yes/no to run agents all remotely or locally.")
 
