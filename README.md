@@ -35,7 +35,7 @@ The `run.py` requires a specific directory/subdirectory structure on the local m
         agent1_secrets.txt
         agent2_secrets.txt
         
-   agent_neuralnet_models/
+    agent_neuralnet_models/
         agent0_neuralnet_models/
             agent1.pth
             agent2.pth
@@ -53,27 +53,31 @@ The `run.py` requires a specific directory/subdirectory structure on the local m
         agent2_secret_models/
             agent0.pth
 
-**Note:** `agent_neuralnet_models/`'s subdirectories may contain less than *group size* neural net models, as agents may or may not use a neural net as their behavioral model.
+**Note:** `agent_neuralnet_models/`'s subdirectories may contain none or less than *group size* neural net models, as agents may or may not use a neural net as their behavioral model. The same is true for `secret_neuralnet_models/`.
 
-The same is true for `secret_neuralnet_models/`.
+**Prefacing directory names:** The outer directories `agent_info_files/`, `shared_secrets_files/`, `agent_neuralnet_models/`, and `secret_neuralnet_models/` may be prefaced with the letter **c_** for *centralized* or **d_** indicating *decentralized*. 
+Example: `c_agent_info_files/`, etc. 
 
 ##### Directories
-`agent_neuralnet_models/`
+Below are the required directories for the centralized setting. Repeat the below procedure using the decentralized prefix to run that setting. 
+
+`c_agent_neuralnet_models/`
 - Provided in repo.
 
-`shared_secrets_files/`
+`c_shared_secrets_files/`
  - Provided in repo.
 
-`agent_neuralnet_models/`
+`c_agent_neuralnet_models/`
  - Create directory and subdirectories by: 
    ```bash
-   mkdir agent_neuralnet_models/
-   mkdir agent_neuralnet_models/agent0_neuralnet_models/
-   mkdir agent_neuralnet_models/agent1_neuralnet_models/
-   mkdir agent_neuralnet_models/agent2_neuralnet_models/
+   mkdir c_agent_neuralnet_models/
+   mkdir c_agent_neuralnet_models/agent0_neuralnet_models/
+   mkdir c_agent_neuralnet_models/agent1_neuralnet_models/
+   mkdir c_agent_neuralnet_models/agent2_neuralnet_models/
    ```
- 
-`secret_neuralnet_models/`
+  - The inner subdirectories are empty by default, but the subdirectories themselves must be created for the program to run.
+  
+`c_secret_neuralnet_models/`
  - Create directory and subdirectories by: 
    ```bash
    mkdir secret_neuralnet_models/
@@ -81,6 +85,7 @@ The same is true for `secret_neuralnet_models/`.
    mkdir secret_neuralnet_models/agent1_secret_models/
    mkdir secret_neuralnet_models/agent2_secret_models/
    ```
+  - Again, the inner subdirectories are empty by default, but the subdirectories themselves must be created for the program to run. 
  
 ### 2. JSON file format for agent parameters
 There are two multi-agent deployed settings available, along with their own agent classes:
@@ -90,11 +95,9 @@ There are two multi-agent deployed settings available, along with their own agen
  - Decentralized setting.
    - Decentralized System Agent
 
-**Centralized Setting:** A central authority is entrusted with authentication of and key distribution to all users. This is similar to a public-key infrastructure where a certifying authority provides assurance of a user’s identity.
-
-**Decentralized Setting:** No central authority exists, so users are individually responsible for authentication and key establishment.
-
 ##### 2A. Centralized Setting
+In this setting, a central authority is entrusted with authentication of and key distribution to all users. This is similar to a public-key infrastructure where a certifying authority provides assurance of a user’s identity.
+
 The default group size is 3 agents. 
 The central server agent (class: **Central Server Agent**) typically has group ID of 0. 
 The other two agents (class: **Centralized System Agent**) have group ID 1 and 2, respectively. 
@@ -104,41 +107,84 @@ Below are important adjustable parameters for these agents per file.
 **Central Server Agent**
 
 `agent0_info.txt`:
+```
+group_id: 0 
+# The central server typically has group ID of 0.
 
-**group_id: 0 |** The central server typically has group ID of 0.
-**is_central_server: true |** Identify this agent as the central server.
-**central_server_group_id: 0** 
-**auth_method: [-1, 'hypothesis_test', 'hypothesis_test'] |** Authentication test for *agent 1* and *agent 2*. No authentication of self at index 0. 
-**models_list: [-1, {...}, {...}] |** The central server stores behavioral models to interact with *agent 1* and for *agent 2* each in the multi-agent system.
+is_central_server: true
+# Identify this agent as the central server.
+
+central_server_group_id: 0 
+
+auth_method: [-1, 'hypothesis_test', 'hypothesis_test'] 
+# Authentication test for *agent 1* and *agent 2*. No authentication of self, so leave index 0 as null. 
+
+ip_addr: 34.82.122.236
+# IP address of remote machine for this agent.
+
+models_list: [-1, {...}, {...}]
+# The central server stores behavioral models to interact with agent 1 and agent 2 each in the multi-agent system.
+```
 
 `agent0_secrets.txt`:
-**secrets_list: [-1, {...}, {...}] |** The central server stores the true behavioral model belonging to *agent 1* and *agent 2* as shared secrets.
+```
+secrets_list: [-1, {...}, {...}] 
+# The central server stores the true behavioral model belonging to agent 1 and agent 2 as shared secrets.
+```
 
 **Centralized System Agent**
 
 `agent1_info.txt`:
-**group_id: 1** 
-**is_central_server: false** | Identify that self is not central seerver.
-**central_server_group_id: 0** 
-**auth_method: 'hypothesis_test'** 
-**models_list: [-1, {...}, -1]** | Store a behavioral model at own index, to interact (only) with central server in the multi-agent system.
+```
+group_id: 1 
+
+is_central_server: false 
+# Identify that self is not central seerver.
+
+central_server_group_id: 0
+
+auth_method: 'hypothesis_test' 
+
+ip_addr: 35.197.123.164
+# IP address of remote machine for this agent.
+
+models_list: [-1, {...}, -1]
+# Store a behavioral model at own index, to interact (only) with central server in the multi-agent system.
+```
 
 `agent1_secrets.txt`:
-**secrets_list: [{...},-1,-1]** | Store the true model of the central server at index 0 as a shared secret.
-
+```
+secrets_list: [{...},-1,-1]
+# Store the true model of the central server at index 0 as a shared secret.
+```
 
 `agent2_info.txt`:
-**group_id: 2** 
-**is_central_server: false** | Identify that self is not central seerver.
-**central_server_group_id: 0** 
-**auth_method: 'hypothesis_test'** 
-**models_list: [-1, -1, {...}]** | Store a behavioral model at own index, to interact (only) with central server in the multi-agent system.
+```
+group_id: 2
+
+is_central_server: false
+# Identify that self is not central server.
+
+central_server_group_id: 0
+
+auth_method: 'hypothesis_test'
+
+ip_addr: 35.199.162.254
+# IP address of remote machine for this agent.
+
+models_list: [-1, -1, {...}]
+# Store a behavioral model at own index, to interact (only) with central server in the multi-agent system.
+```
 
 `agent2_secrets.txt`:
-**secrets_list: [{...},-1,-1]** | Store the true model of the central server at index 0 as a shared secret.
-
+```
+secrets_list: [{...},-1,-1]
+# Store the true model of the central server at index 0 as a shared secret.
+```
 
 ##### 2B. Decentralized Setting
+In this setting, no central authority exists, so users are individually responsible for authentication and key establishment.
+
 The default group size is 3 agents. 
 There is only one class of agent in this system.
 The decentralized system agents (class: **Decentralized System Agent**) have group IDs of 0, 1, and 2.
@@ -149,25 +195,43 @@ Below are important adjustable parameters for these agents per file.
 Decentralized system agents by default use multi-trees, a probabilistic decision tree variant which takes as input actions from all agents in the system. Agents generate multitree parameters from a unique seed parameter, which typically has the value of their group ID.
 
 `agent0_info.txt`:
-**group_id: 0**
-**models_list: [{'model_type':'multitree', 'unique_seed': 0,...}, -1, -1]** Keep own model at own group index. Use multitree for group interaction process. Unique seed for multitree parameter generation is own index.
+```
+group_id: 0
+models_list: [{'model_type':'multitree', 'unique_seed': 0,...}, -1, -1]
+# Keep own model at own group index. Use multitree for group interaction process. Unique seed for multitree parameter generation is own index.
+```
 
 `agent0_secrets.txt`:
-**secrets_list: [-1, {'model_type':'multitree', 'unique_seed': 1,...}, {'model_type':'multitree', 'unique_seed': 2,...}]** | Store true behavioral models of *agent 1* and *agent 2* at their respective indices. 
+```
+secrets_list: [-1, {'model_type':'multitree', 'unique_seed': 1,...}, {'model_type':'multitree', 'unique_seed': 2,...}]
+# Store true behavioral models of *agent 1* and *agent 2* at their respective indices. 
+```
 
 `agent1_info.txt`:
-**group_id: 1**
-**models_list: [-1, {'model_type':'multitree', 'unique_seed': 0,...}, -1]** Keep own model at own group index. Use multitree for group interaction process. Unique seed for multitree parameter generation is own index.
+```
+group_id: 1
+models_list: [-1, {'model_type':'multitree', 'unique_seed': 0,...}, -1]
+# Keep own model at own group index. Use multitree for group interaction process. Unique seed for multitree parameter generation is own index.
+```
 
 `agent1_secrets.txt`:
-**secrets_list: [{'model_type':'multitree', 'unique_seed': 0,...}, -1, {'model_type':'multitree', 'unique_seed': 2,...}]** | Store true behavioral models of *agent 0* and *agent 2* at their respective indices. 
+```
+secrets_list: [{'model_type':'multitree', 'unique_seed': 0,...}, -1, {'model_type':'multitree', 'unique_seed': 2,...}]
+# Store true behavioral models of *agent 0* and *agent 2* at their respective indices. 
+```
 
 `agent2_info.txt`:
-**group_id: 2**
-**models_list: [-1, -1, {'model_type':'multitree', 'unique_seed': 2,...}]** Keep own model at own group index. 
+```
+group_id: 2
+models_list: [-1, -1, {'model_type':'multitree', 'unique_seed': 2,...}]
+# Keep own model at own group index. 
+```
 
 `agent2_secrets.txt`:
-**secrets_list: [ {'model_type':'multitree', 'unique_seed': 0,...}, {'model_type':'multitree', 'unique_seed': 1,...}, -1]** | Store true behavioral models of *agent 0* and *agent 1* at their respective indices. 
+```
+secrets_list: [ {'model_type':'multitree', 'unique_seed': 0,...}, {'model_type':'multitree', 'unique_seed': 1,...}, -1]
+# Store true behavioral models of *agent 0* and *agent 1* at their respective indices. 
+```
 
 ### 3. Run commands for supported deployments.
 PyAMI multi-agent system may be deployed either across remote machines (if available), or entirely on local machine for ease of use. 
@@ -175,7 +239,7 @@ PyAMI multi-agent system may be deployed either across remote machines (if avail
 #### 3A. Running with remote machines
 
 ##### Running (centralized system)
-Agent json info files (`agent0_info.txt`, etc.) must contain IP address of live remote machines agents will run on, in "ipaddr" field as a string. 
+Agent json info files (`agent0_info.txt`, `agent1_info.txt`, `agent2_info.txt`) must contain IP address of live remote machines agents will run on, in "ipaddr" field as a string. 
 
 Example:
 ```json
